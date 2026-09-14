@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedWorkspaceRouteRouteImport } from './routes/_authenticated/_workspace/route'
 import { Route as AuthenticatedWorkspaceDashboardRouteImport } from './routes/_authenticated/_workspace/dashboard'
 import { Route as AuthenticatedWorkspaceExploreRouteImport } from './routes/_authenticated/_workspace/explore'
+import { Route as AuthenticatedWorkspaceLeaderboardRouteImport } from './routes/_authenticated/_workspace/leaderboard'
 import { Route as AuthenticatedWorkspacePassportRouteImport } from './routes/_authenticated/_workspace/passport'
 import { Route as AuthenticatedWorkspaceProfileRouteImport } from './routes/_authenticated/_workspace/profile'
 import { Route as AuthenticatedWorkspaceReferralRouteImport } from './routes/_authenticated/_workspace/referral'
@@ -51,6 +52,12 @@ const AuthenticatedWorkspaceExploreRoute =
   AuthenticatedWorkspaceExploreRouteImport.update({
     id: '/explore',
     path: '/explore',
+    getParentRoute: () => AuthenticatedWorkspaceRouteRoute,
+  } as any)
+const AuthenticatedWorkspaceLeaderboardRoute =
+  AuthenticatedWorkspaceLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
     getParentRoute: () => AuthenticatedWorkspaceRouteRoute,
   } as any)
 const AuthenticatedWorkspacePassportRoute =
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedWorkspaceDashboardRoute
   '/explore': typeof AuthenticatedWorkspaceExploreRoute
+  '/leaderboard': typeof AuthenticatedWorkspaceLeaderboardRoute
   '/passport': typeof AuthenticatedWorkspacePassportRoute
   '/profile': typeof AuthenticatedWorkspaceProfileRoute
   '/referral': typeof AuthenticatedWorkspaceReferralRoute
@@ -107,6 +115,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedWorkspaceDashboardRoute
   '/explore': typeof AuthenticatedWorkspaceExploreRoute
+  '/leaderboard': typeof AuthenticatedWorkspaceLeaderboardRoute
   '/passport': typeof AuthenticatedWorkspacePassportRoute
   '/profile': typeof AuthenticatedWorkspaceProfileRoute
   '/referral': typeof AuthenticatedWorkspaceReferralRoute
@@ -122,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/_workspace': typeof AuthenticatedWorkspaceRouteRouteWithChildren
   '/_authenticated/_workspace/dashboard': typeof AuthenticatedWorkspaceDashboardRoute
   '/_authenticated/_workspace/explore': typeof AuthenticatedWorkspaceExploreRoute
+  '/_authenticated/_workspace/leaderboard': typeof AuthenticatedWorkspaceLeaderboardRoute
   '/_authenticated/_workspace/passport': typeof AuthenticatedWorkspacePassportRoute
   '/_authenticated/_workspace/profile': typeof AuthenticatedWorkspaceProfileRoute
   '/_authenticated/_workspace/referral': typeof AuthenticatedWorkspaceReferralRoute
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/explore'
+    | '/leaderboard'
     | '/passport'
     | '/profile'
     | '/referral'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/explore'
+    | '/leaderboard'
     | '/passport'
     | '/profile'
     | '/referral'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_workspace'
     | '/_authenticated/_workspace/dashboard'
     | '/_authenticated/_workspace/explore'
+    | '/_authenticated/_workspace/leaderboard'
     | '/_authenticated/_workspace/passport'
     | '/_authenticated/_workspace/profile'
     | '/_authenticated/_workspace/referral'
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceExploreRouteImport
       parentRoute: typeof AuthenticatedWorkspaceRouteRoute
     }
+    '/_authenticated/_workspace/leaderboard': {
+      id: '/_authenticated/_workspace/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedWorkspaceLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedWorkspaceRouteRoute
+    }
     '/_authenticated/_workspace/passport': {
       id: '/_authenticated/_workspace/passport'
       path: '/passport'
@@ -268,6 +288,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedWorkspaceRouteRouteChildren {
   AuthenticatedWorkspaceDashboardRoute: typeof AuthenticatedWorkspaceDashboardRoute
   AuthenticatedWorkspaceExploreRoute: typeof AuthenticatedWorkspaceExploreRoute
+  AuthenticatedWorkspaceLeaderboardRoute: typeof AuthenticatedWorkspaceLeaderboardRoute
   AuthenticatedWorkspacePassportRoute: typeof AuthenticatedWorkspacePassportRoute
   AuthenticatedWorkspaceProfileRoute: typeof AuthenticatedWorkspaceProfileRoute
   AuthenticatedWorkspaceReferralRoute: typeof AuthenticatedWorkspaceReferralRoute
@@ -280,6 +301,8 @@ const AuthenticatedWorkspaceRouteRouteChildren: AuthenticatedWorkspaceRouteRoute
   {
     AuthenticatedWorkspaceDashboardRoute: AuthenticatedWorkspaceDashboardRoute,
     AuthenticatedWorkspaceExploreRoute: AuthenticatedWorkspaceExploreRoute,
+    AuthenticatedWorkspaceLeaderboardRoute:
+      AuthenticatedWorkspaceLeaderboardRoute,
     AuthenticatedWorkspacePassportRoute: AuthenticatedWorkspacePassportRoute,
     AuthenticatedWorkspaceProfileRoute: AuthenticatedWorkspaceProfileRoute,
     AuthenticatedWorkspaceReferralRoute: AuthenticatedWorkspaceReferralRoute,
