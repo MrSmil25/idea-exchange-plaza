@@ -1,50 +1,320 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, CalendarDays, Check, ChevronRight, CircleDot, Coins, Flame, Plus, Sparkles, Star, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { StudentAvatar } from "@/components/app-shell";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarClock,
+  Check,
+  Clock,
+  Coins,
+  Plus,
+  Presentation,
+  Sparkles,
+  Star,
+  Users,
+} from "lucide-react";
+import {
+  currentStudent,
+  goalLabels,
+  rankedOfferings,
+  skillById,
+  teachingHours,
+} from "@/data/exchange";
+import { ActivityFeed } from "@/components/exchange/activity-feed";
+import { StudentBadge } from "@/components/exchange/skill-card";
+import { EmptyState } from "@/components/exchange/empty-state";
 
 export const Route = createFileRoute("/_authenticated/_workspace/dashboard")({
-  head: () => ({ meta: [
-    { title: "Dashboard — EXCHANGE" },
-    { name: "description", content: "Grow your verified student skill identity on EXCHANGE." },
-    { property: "og:title", content: "Dashboard — EXCHANGE" },
-    { property: "og:description", content: "Grow your verified student skill identity on EXCHANGE." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ]}),
+  head: () => ({
+    meta: [
+      { title: "Your Skill Journey — EXCHANGE" },
+      {
+        name: "description",
+        content:
+          "Track your skill score, credits, verified skills, and the next exchange that moves your goals forward.",
+      },
+      { property: "og:title", content: "Your Skill Journey — EXCHANGE" },
+      { property: "og:description", content: "Track your skill score, credits, and verified skills." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { user } = Route.useRouteContext();
-  const profile = useQuery({
-    queryKey: ["profile", user.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-      if (data) return data;
-      const metadata = user.user_metadata;
-      const draft = { id: user.id, display_name: String(metadata["display_name"] ?? user.email?.split("@")[0] ?? "Student"), faculty: String(metadata["faculty"] ?? "Universitas Indonesia"), university: "Universitas Indonesia" };
-      const { data: created, error } = await supabase.from("profiles").insert(draft).select().single();
-      if (error) throw error;
-      return created;
-    },
-  });
-  const firstName = profile.data?.display_name.split(" ")[0] || "Dita";
+  const me = currentStudent;
+  const firstName = me.name.split(" ")[0];
+  const best = rankedOfferings(me)[0];
 
-  return <div className="mx-auto max-w-6xl px-4 py-7 sm:px-7 sm:py-10"><div className="flex flex-col gap-6 border-b border-workspace-border pb-8 md:flex-row md:items-end md:justify-between"><div><p className="text-xs text-workspace-muted">Monday, 14 September · Depok</p><h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Good morning, {firstName}.</h1><p className="mt-3 text-sm text-workspace-muted">Your next exchange can make another skill visible.</p></div><div className="flex gap-2"><Button asChild variant="outline" className="border-workspace-border bg-workspace-card"><Link to="/teach"><Plus className="size-4" /> Offer a skill</Link></Button><Button asChild><Link to="/explore">Find an exchange <ArrowRight className="size-4" /></Link></Button></div></div>
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-12">
+      {/* Identity header */}
+      <header className="flex flex-col gap-7 border-b border-workspace-border pb-9 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+            Your skill journey
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Hello, {firstName} 👋</h1>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-workspace-muted">
+            Every exchange creates learning, contribution, and career evidence. You are{" "}
+            {780 - me.skillScore > 0 ? `${780 - me.skillScore} points` : "one verified skill"} away from
+            Skill Specialist.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/teach"
+            className="flex h-10 items-center gap-1.5 rounded-md border border-workspace-border bg-workspace-card px-4 text-sm font-medium transition-colors hover:bg-workspace-soft"
+          >
+            <Plus className="size-4" /> Offer a skill
+          </Link>
+          <Link
+            to="/explore"
+            className="flex h-10 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong"
+          >
+            Find an exchange <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </header>
 
-    <section className="grid gap-4 py-6 md:grid-cols-[1.55fr_.8fr]">
-      <div className="rounded-md border border-workspace-border bg-workspace-card p-5 sm:p-6"><div className="flex items-start justify-between gap-5"><div><p className="text-[11px] font-semibold uppercase text-primary">Skill Passport · Level 4</p><h2 className="mt-2 font-display text-xl font-bold">Your identity is taking shape</h2><p className="mt-2 max-w-lg text-sm leading-6 text-workspace-muted">Complete one teaching session and verify Data Storytelling to reach 85% profile strength.</p></div><div className="grid size-14 shrink-0 place-items-center rounded-md bg-workspace-soft font-display text-lg font-bold text-primary">78%</div></div><div className="mt-6 h-2 overflow-hidden rounded-full bg-workspace-soft"><div className="h-full w-[78%] bg-primary" /></div><div className="mt-6 grid gap-3 sm:grid-cols-3"><Signal icon={<BadgeCheck />} value="4" label="Verified skills" /><Signal icon={<Star />} value="4.9" label="Peer reputation" /><Signal icon={<Users />} value="31" label="Trusted sessions" /></div><Link to="/passport" className="mt-6 flex items-center justify-between border-t border-workspace-border pt-4 text-sm font-semibold">Open Skill Passport <ChevronRight className="size-4" /></Link></div>
-      <div className="rounded-md bg-sidebar p-6 text-sidebar-foreground"><p className="text-[11px] font-semibold uppercase text-primary">Credit balance</p><div className="mt-5 flex items-center gap-3"><Coins className="size-7 text-accent" /><span className="font-display text-4xl font-bold">{profile.data?.credits ?? 100}</span></div><p className="mt-2 text-sm text-sidebar-muted">Available to unlock learning</p><div className="my-6 h-px bg-sidebar-border" /><p className="text-sm font-semibold">Teach UI Sketching</p><p className="mt-1 text-xs text-sidebar-muted">Earn 45 credits · 2 requests</p><Button asChild variant="secondary" className="mt-5 w-full"><Link to="/wallet">View wallet</Link></Button></div>
-    </section>
+      {/* Headline stats */}
+      <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Skill journey summary">
+        <Stat label="Skill Level" value={me.level} caption={`${me.exchangesCompleted} exchanges completed`} />
+        <Stat label="Skill Score" value={String(me.skillScore)} caption="+38 in the last 30 days" accent />
+        <Stat label="Exchange Credits" value={String(me.credits)} caption="Earned by teaching peers" />
+        <Stat
+          label="Verified Skills"
+          value={String(me.verifiedSkills.length)}
+          caption="Backed by assessments"
+        />
+      </section>
 
-    <section className="grid gap-4 lg:grid-cols-[1.3fr_.7fr]"><div className="rounded-md border border-workspace-border bg-workspace-card"><div className="flex items-center justify-between border-b border-workspace-border p-5"><div><p className="text-[11px] font-semibold uppercase text-primary">Next on your calendar</p><h2 className="mt-1 font-display text-lg font-bold">Active exchanges</h2></div><Button asChild variant="workspaceGhost" size="sm"><Link to="/sessions">All sessions</Link></Button></div><Session date="Today · 15:30" skill="Data Storytelling in Figma" peer="Reza Aditya · Computer Science" mode="Learning" /><Session date="Saturday · 10:00" skill="UI Sketching for Product Ideas" peer="Alya Kusuma · Psychology" mode="Teaching" /></div><div className="rounded-md border border-workspace-border bg-workspace-card p-5"><p className="text-[11px] font-semibold uppercase text-primary">Weekly momentum</p><div className="mt-5 flex items-center gap-3"><Flame className="size-6 text-accent" /><p className="font-display text-2xl font-bold">3 week streak</p></div><div className="mt-6 flex justify-between">{[true,true,true,true,false,false,false].map((done, index) => <div key={index} className={`grid size-7 place-items-center rounded-md text-[10px] font-semibold ${done ? "bg-primary text-primary-foreground" : "bg-workspace-soft text-workspace-muted"}`}>{done ? <Check className="size-3" /> : index + 1}</div>)}</div><p className="mt-5 text-xs leading-5 text-workspace-muted">One meaningful exchange each week builds a stronger reputation signal.</p></div></section>
+      {/* Next opportunity + impact */}
+      <section className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <div className="rounded-lg border border-workspace-border bg-workspace-card p-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next opportunity</p>
+          <h2 className="mt-2 font-display text-xl font-bold">Your next recommended exchange</h2>
+          {best ? (
+            <div className="mt-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <StudentBadge initials={best.offering.teacher.photo} className="size-11 text-sm" />
+                  <div>
+                    <p className="font-display text-base font-bold">
+                      Learn {best.offering.skill.name} {best.offering.skill.level}
+                    </p>
+                    <p className="mt-0.5 text-sm text-workspace-muted">
+                      {best.offering.teacher.name} · {best.offering.teacher.faculty}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-3xl font-bold text-primary-strong">{best.match.score}%</p>
+                  <p className="text-[11px] uppercase text-workspace-muted">Match score</p>
+                </div>
+              </div>
 
-    <section className="mt-4 rounded-md border border-workspace-border bg-workspace-card p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><div className="grid size-10 place-items-center rounded-md bg-accent/15 text-accent"><Sparkles className="size-5" /></div><div><h2 className="font-display font-bold">Recommended next move</h2><p className="mt-1 text-sm text-workspace-muted">Ask Nadia from Accounting to verify your Financial Modeling foundations.</p></div></div><Button asChild variant="outline" className="border-workspace-border"><Link to="/explore">View match <ArrowRight className="size-4" /></Link></Button></div></section>
-  </div>;
+              <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+                {best.match.reasons.map((reason) => (
+                  <li key={reason} className="flex items-center gap-2 text-sm">
+                    <Check className="size-4 shrink-0 text-primary" />
+                    {reason}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-5 rounded-md bg-workspace-soft p-4">
+                <p className="text-[11px] font-semibold uppercase text-workspace-muted">
+                  How this match was calculated
+                </p>
+                <div className="mt-3 space-y-2">
+                  {best.match.components.map((c) => (
+                    <div key={c.label} className="flex items-center gap-3">
+                      <span className="w-36 shrink-0 text-xs text-workspace-muted">{c.label}</span>
+                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-workspace-border">
+                        <span
+                          className="animate-passport-fill block h-full bg-primary"
+                          style={{ width: `${(c.earned / c.weight) * 100}%` }}
+                        />
+                      </span>
+                      <span className="w-16 shrink-0 text-right text-xs font-semibold">
+                        {c.earned}/{c.weight}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-workspace-muted">
+                <span className="flex items-center gap-1">
+                  <Clock className="size-3.5" /> {best.offering.skill.durationMinutes} minutes
+                </span>
+                <span className="flex items-center gap-1">
+                  <CalendarClock className="size-3.5" /> {best.offering.availability}
+                </span>
+                <span className="flex items-center gap-1 font-semibold text-workspace-foreground">
+                  <Coins className="size-3.5 text-accent" /> {best.offering.skill.credits} Credits
+                </span>
+                <Link
+                  to="/explore"
+                  className="ml-auto flex items-center gap-1 font-semibold text-primary-strong"
+                >
+                  Start exchange <ArrowRight className="size-3.5" />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              className="mt-5"
+              icon={<Sparkles className="size-5" />}
+              title="Tell us one goal and matching starts."
+              description="Pick a goal like internship or competition, and EXCHANGE will surface the peers who can help you get there."
+              actionLabel="Explore skills"
+              actionTo="/explore"
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="rounded-lg bg-sidebar p-6 text-sidebar-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Your impact</p>
+            <h2 className="mt-2 font-display text-lg font-bold">What you gave back</h2>
+            <div className="mt-5 space-y-4">
+              <Impact
+                icon={<Users className="size-4 text-primary" />}
+                value={String(me.studentsHelped)}
+                label="Students helped"
+              />
+              <Impact
+                icon={<Clock className="size-4 text-primary" />}
+                value={String(teachingHours(me))}
+                label="Teaching hours"
+              />
+              <Impact
+                icon={<Presentation className="size-4 text-primary" />}
+                value={String(me.teaching.length)}
+                label="Skills shared"
+              />
+            </div>
+            <p className="mt-6 text-xs leading-5 text-sidebar-muted">
+              Contribution is half of your Skill Score — teaching proves you understood it.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-workspace-border bg-workspace-card p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Reputation</p>
+            <div className="mt-4 flex items-center gap-4">
+              <span className="flex items-center gap-1.5 font-display text-2xl font-bold">
+                <Star className="size-5 fill-accent text-accent" /> {me.rating.toFixed(1)}
+              </span>
+              <span className="text-xs text-workspace-muted">
+                from {me.exchangesCompleted} rated exchanges
+              </span>
+            </div>
+            <Link
+              to="/passport"
+              className="mt-5 flex items-center justify-between border-t border-workspace-border pt-4 text-sm font-semibold"
+            >
+              Open Skill Passport <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Skill progress */}
+      <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+        <div className="rounded-lg border border-workspace-border bg-workspace-card p-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Skill progress</p>
+          <h2 className="mt-2 font-display text-lg font-bold">What you are building now</h2>
+          {me.learning.length > 0 ? (
+            <div className="mt-6 space-y-5">
+              {me.learning.map((entry) => {
+                const skill = skillById[entry.skillId];
+                if (!skill) return null;
+                const verified = me.verifiedSkills.includes(entry.skillId);
+                return (
+                  <div key={entry.skillId}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="flex items-center gap-1.5 text-sm font-semibold">
+                        {skill.name}
+                        {verified && <BadgeCheck className="size-4 text-primary" />}
+                      </p>
+                      <span className="text-xs font-semibold text-workspace-muted">{entry.progress}%</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-workspace-soft">
+                      <div
+                        className="animate-passport-fill h-full rounded-full bg-primary"
+                        style={{ width: `${entry.progress}%` }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-workspace-muted">
+                      {entry.progress >= 80
+                        ? "Assessment ready — one session from verification"
+                        : `Next step: book a session for your ${goalLabels[me.goals[0]!].toLowerCase()} goal`}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              className="mt-5"
+              title="Your first skill is one exchange away."
+              description="Pick a skill you want this semester and your progress bar starts filling with real, verified sessions."
+              actionLabel="Explore your first skill"
+              actionTo="/explore"
+            />
+          )}
+        </div>
+
+        <div className="rounded-lg border border-workspace-border bg-workspace-card p-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Campus activity</p>
+          <h2 className="mt-2 font-display text-lg font-bold">Recent exchanges</h2>
+          <ActivityFeed limit={5} />
+          <Link
+            to="/leaderboard"
+            className="flex items-center justify-between border-t border-workspace-border pt-4 text-sm font-semibold"
+          >
+            See campus leaderboard <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-function Signal({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) { return <div className="rounded-md bg-workspace-soft p-3"><div className="flex items-center gap-2 text-primary">{icon}<span className="font-display text-lg font-bold text-workspace-foreground">{value}</span></div><p className="mt-1 text-[11px] text-workspace-muted">{label}</p></div>; }
-function Session({ date, skill, peer, mode }: { date: string; skill: string; peer: string; mode: string }) { return <div className="flex items-center gap-4 border-b border-workspace-border p-5 last:border-0"><div className="grid size-10 shrink-0 place-items-center rounded-md bg-workspace-soft"><CalendarDays className="size-4 text-primary" /></div><div className="min-w-0 flex-1"><p className="text-xs text-workspace-muted">{date} · {mode}</p><h3 className="mt-1 truncate text-sm font-semibold">{skill}</h3><p className="mt-1 truncate text-xs text-workspace-muted">{peer}</p></div><CircleDot className="size-4 text-primary" /></div>; }
+function Stat({
+  label,
+  value,
+  caption,
+  accent,
+}: {
+  label: string;
+  value: string;
+  caption: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-workspace-border bg-workspace-card p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-workspace-muted">{label}</p>
+      <p
+        className={`mt-2 font-display text-2xl font-bold ${accent ? "text-primary-strong" : "text-workspace-foreground"}`}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-[11px] text-workspace-muted">{caption}</p>
+    </div>
+  );
+}
+
+function Impact({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-md bg-sidebar-panel">{icon}</span>
+      <div>
+        <p className="font-display text-xl font-bold">{value}</p>
+        <p className="text-[11px] text-sidebar-muted">{label}</p>
+      </div>
+    </div>
+  );
+}
