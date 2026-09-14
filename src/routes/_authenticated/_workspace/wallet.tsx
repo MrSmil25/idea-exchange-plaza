@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { WorkspacePage } from "@/components/workspace-page";
+export const Route = createFileRoute("/_authenticated/_workspace/wallet")({ head: () => ({ meta: [{ title: "Wallet — EXCHANGE" }, { name: "description", content: "Track the credits you earn and use." }, { property: "og:title", content: "Wallet — EXCHANGE" }, { property: "og:description", content: "Track the credits you earn and use." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <WorkspacePage eyebrow="Internal economy" title="Credit Wallet" description="See how the value you contribute unlocks the skills you want to learn next." /> });

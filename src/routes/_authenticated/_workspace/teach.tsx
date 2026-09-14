@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { WorkspacePage } from "@/components/workspace-page";
+export const Route = createFileRoute("/_authenticated/_workspace/teach")({ head: () => ({ meta: [{ title: "Teach — EXCHANGE" }, { name: "description", content: "Share your skills and earn learning credits." }, { property: "og:title", content: "Teach — EXCHANGE" }, { property: "og:description", content: "Share your skills and earn learning credits." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <WorkspacePage eyebrow="Create value" title="Teach what you know" description="Package a useful skill into a focused peer session and earn credits through real contribution." /> });
