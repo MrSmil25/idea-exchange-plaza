@@ -76,6 +76,22 @@ function SidebarContent({ pathname, onNavigate, onSignOut }: { pathname: string;
   return <><div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5"><span className="grid size-8 place-items-center rounded-md bg-primary font-display font-bold text-primary-foreground">E</span><div><p className="font-display text-sm font-bold text-sidebar-foreground">EXCHANGE</p><p className="text-[10px] text-sidebar-muted">Student workspace</p></div><Button variant="workspaceGhost" size="icon" className="ml-auto lg:hidden" onClick={onNavigate} aria-label="Close navigation"><X className="size-4" /></Button></div><nav className="flex-1 overflow-y-auto px-3 py-5" aria-label="Student workspace"><p className="mb-2 px-3 text-[10px] font-semibold uppercase text-sidebar-muted">Workspace</p><div className="space-y-1">{navigation.map((item) => { const Icon = item.icon; const active = pathname === item.to; return <Link key={item.to} to={item.to} onClick={onNavigate} className={cn("flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors", active ? "bg-sidebar-active text-sidebar-foreground" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground")}><Icon className={cn("size-4", active && "text-primary")} />{item.label}{item.label === "My Sessions" && <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">2</span>}</Link>; })}</div></nav><div className="border-t border-sidebar-border p-3"><div className="mb-3 rounded-md bg-sidebar-panel p-3"><div className="flex items-center justify-between"><span className="text-[11px] text-sidebar-muted">Skill identity</span><span className="text-xs font-semibold text-sidebar-foreground">78%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sidebar-border"><div className="h-full w-[78%] bg-primary" /></div><p className="mt-2 text-[10px] leading-4 text-sidebar-muted">Two verified sessions to Level 5</p></div><Button variant="workspaceGhost" className="w-full justify-start text-sidebar-muted" onClick={onSignOut}><LogOut className="size-4" /> Sign out</Button></div></>;
 }
 
+const workspaceApi = getRouteApi("/_authenticated/_workspace");
+
+function HeaderIdentity() {
+  const { user } = workspaceApi.useRouteContext();
+  const profile = useQuery({
+    queryKey: ["profile", user.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("display_name, faculty, avatar_url").eq("id", user.id).maybeSingle();
+      return data;
+    },
+  });
+  const name = profile.data?.display_name ?? String(user.user_metadata["display_name"] ?? user.email?.split("@")[0] ?? "Student");
+  const faculty = profile.data?.faculty ?? String(user.user_metadata["faculty"] ?? "Student");
+  return <div className="ml-auto flex items-center gap-3"><div className="hidden text-right sm:block"><p className="text-xs font-semibold">{name}</p><p className="text-[11px] text-workspace-muted">{faculty}</p></div><StudentAvatar className="size-9" /></div>;
+}
+
 export function StudentAvatar({ className }: { className?: string }) {
   return <div className={cn("relative shrink-0 overflow-hidden rounded-md bg-secondary", className)}><img src={studentsImage} alt="Dita Prameswari" width={1024} height={1024} className="absolute bottom-0 left-0 size-[200%] max-w-none object-cover object-left-bottom" /></div>;
 }
