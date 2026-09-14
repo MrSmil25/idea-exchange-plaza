@@ -14,51 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string
-          created_at: string
-          credits: number
-          display_name: string
-          faculty: string
-          id: string
-          profile_strength: number
-          reputation: number
-          skills: string[]
-          university: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string
-          created_at?: string
-          credits?: number
-          display_name?: string
-          faculty?: string
-          id: string
-          profile_strength?: number
-          reputation?: number
-          skills?: string[]
-          university?: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string
-          created_at?: string
-          credits?: number
-          display_name?: string
-          faculty?: string
-          id?: string
-          profile_strength?: number
-          reputation?: number
-          skills?: string[]
-          university?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
