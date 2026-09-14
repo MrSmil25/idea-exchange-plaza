@@ -64,7 +64,7 @@ export function AppShell() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-workspace-border bg-workspace/92 px-4 backdrop-blur-xl sm:px-7">
           <Button variant="workspaceGhost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu className="size-5" /></Button>
           <div className="relative hidden max-w-md flex-1 sm:block"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-workspace-muted" /><input aria-label="Search skills and students" placeholder="Search skills and students" className="h-9 w-full rounded-md border border-workspace-border bg-workspace-card pl-9 pr-3 text-sm outline-none placeholder:text-workspace-muted focus:border-primary" /></div>
-          <div className="ml-auto flex items-center gap-3"><div className="hidden text-right sm:block"><p className="text-xs font-semibold">Dita Prameswari</p><p className="text-[11px] text-workspace-muted">Economics · UI</p></div><StudentAvatar className="size-9" /></div>
+          <HeaderIdentity />
         </header>
         <main><Outlet /></main>
       </div>
