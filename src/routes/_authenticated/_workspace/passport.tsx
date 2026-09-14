@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { WorkspacePage } from "@/components/workspace-page";
+export const Route = createFileRoute("/_authenticated/_workspace/passport")({ head: () => ({ meta: [{ title: "Skill Passport — EXCHANGE" }, { name: "description", content: "Your verified student skill identity." }, { property: "og:title", content: "Skill Passport — EXCHANGE" }, { property: "og:description", content: "Your verified student skill identity." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <WorkspacePage eyebrow="Verified identity" title="Skill Passport" description="A living record of what you can do, backed by assessments, teaching history, and peer trust." /> });

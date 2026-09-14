@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { WorkspacePage } from "@/components/workspace-page";
+export const Route = createFileRoute("/_authenticated/_workspace/sessions")({ head: () => ({ meta: [{ title: "My Sessions — EXCHANGE" }, { name: "description", content: "Manage your upcoming skill exchanges." }, { property: "og:title", content: "My Sessions — EXCHANGE" }, { property: "og:description", content: "Manage your upcoming skill exchanges." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <WorkspacePage eyebrow="Exchange history" title="My Sessions" description="Prepare for upcoming exchanges and turn completed sessions into verified proof." /> });
