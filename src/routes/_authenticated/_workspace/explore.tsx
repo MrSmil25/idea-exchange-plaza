@@ -1,21 +1,38 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import {
-  BadgeCheck,
+  ArrowRight,
   Briefcase,
   Building2,
-  Code2,
-  Coins,
   Compass,
-  Languages,
+  Flame,
+  GraduationCap,
+  MessagesSquare,
   Palette,
-  FlaskConical,
-  Star,
+  Repeat2,
+  Target,
   Trophy,
   Users,
-  ArrowRight,
+  Code2,
+  Search,
 } from "lucide-react";
+import {
+  categoryLabels,
+  currentStudent,
+  goalLabels,
+  mostExchangedSkills,
+  offerings,
+  offeringsAcrossCampus,
+  offeringsFromFaculty,
+  rankedOfferings,
+  recommendedSkills,
+  trendingSkills,
+  type Goal,
+  type SkillCategory,
+} from "@/data/exchange";
+import { SkillCard } from "@/components/exchange/skill-card";
+import { EmptyState } from "@/components/exchange/empty-state";
 import { cn } from "@/lib/utils";
 
 const exploreSearchSchema = z.object({
@@ -29,9 +46,13 @@ export const Route = createFileRoute("/_authenticated/_workspace/explore")({
   head: () => ({
     meta: [
       { title: "Explore Skills — EXCHANGE" },
-      { name: "description", content: "Exchange knowledge with verified students across campus. Find a skill, meet the teacher, grow together." },
+      {
+        name: "description",
+        content:
+          "A skill discovery network, not a course shop. Find verified student teachers across Universitas Indonesia faculties.",
+      },
       { property: "og:title", content: "Explore Skills — EXCHANGE" },
-      { property: "og:description", content: "Exchange knowledge with verified students across campus." },
+      { property: "og:description", content: "Find verified student teachers across campus." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -39,84 +60,73 @@ export const Route = createFileRoute("/_authenticated/_workspace/explore")({
   component: ExplorePage,
 });
 
-const categories = [
+const categories: { id: SkillCategory | "all"; label: string; icon: typeof Compass }[] = [
   { id: "all", label: "All", icon: Compass },
-  { id: "business", label: "Business", icon: Briefcase },
-  { id: "technology", label: "Technology", icon: Code2 },
-  { id: "design", label: "Design", icon: Palette },
-  { id: "language", label: "Language", icon: Languages },
-  { id: "research", label: "Research", icon: FlaskConical },
-] as const;
+  { id: "business", label: categoryLabels.business, icon: Briefcase },
+  { id: "technology", label: categoryLabels.technology, icon: Code2 },
+  { id: "design", label: categoryLabels.design, icon: Palette },
+  { id: "communication", label: categoryLabels.communication, icon: MessagesSquare },
+  { id: "career", label: categoryLabels.career, icon: Target },
+];
 
-const goals = [
+const goals: { id: Goal | "all"; label: string; icon: typeof Compass }[] = [
   { id: "all", label: "All goals", icon: Compass },
   { id: "internship", label: "Internship", icon: Building2 },
   { id: "competition", label: "Competition", icon: Trophy },
   { id: "organization", label: "Organization", icon: Users },
   { id: "career", label: "Career", icon: Briefcase },
-] as const;
-
-type Skill = {
-  name: string;
-  level: string;
-  teacher: string;
-  faculty: string;
-  verified: boolean;
-  rating: number;
-  sessions: number;
-  outcome: string;
-  credits: number;
-  category: string;
-  goals: string[];
-};
-
-const skills: Skill[] = [
-  { name: "Financial Modeling", level: "Beginner", teacher: "Nadia", faculty: "FEB UI", verified: true, rating: 4.9, sessions: 8, outcome: "Build a 3-statement model from scratch for a real company case.", credits: 5, category: "business", goals: ["internship", "competition", "career"] },
-  { name: "React Fundamentals", level: "Beginner", teacher: "Raka", faculty: "Fasilkom UI", verified: true, rating: 4.8, sessions: 12, outcome: "Ship a small working web app with components, state, and routing.", credits: 6, category: "technology", goals: ["internship", "organization", "career"] },
-  { name: "Public Speaking", level: "Intermediate", teacher: "Sinta", faculty: "FISIP UI", verified: true, rating: 5.0, sessions: 15, outcome: "Deliver a confident 10-minute presentation with live feedback.", credits: 4, category: "language", goals: ["competition", "organization", "career"] },
-  { name: "UI Design with Figma", level: "Beginner", teacher: "Bima", faculty: "FT UI", verified: false, rating: 4.6, sessions: 5, outcome: "Design a complete mobile app screen set ready for handoff.", credits: 5, category: "design", goals: ["internship", "organization"] },
-  { name: "Academic Research Methods", level: "Intermediate", teacher: "Dr. Ayu (TA)", faculty: "FIB UI", verified: true, rating: 4.9, sessions: 10, outcome: "Structure a literature review and methodology for your paper.", credits: 6, category: "research", goals: ["competition", "career"] },
-  { name: "Business English", level: "Intermediate", teacher: "Kevin", faculty: "FIB UI", verified: true, rating: 4.7, sessions: 9, outcome: "Handle interviews and professional emails with confidence.", credits: 4, category: "language", goals: ["internship", "career"] },
-  { name: "Data Analysis with Python", level: "Beginner", teacher: "Farhan", faculty: "FMIPA UI", verified: true, rating: 4.8, sessions: 11, outcome: "Clean, analyze, and visualize a real dataset end to end.", credits: 6, category: "technology", goals: ["internship", "competition", "career"] },
-  { name: "Pitch Deck Storytelling", level: "Beginner", teacher: "Laras", faculty: "FEB UI", verified: false, rating: 4.5, sessions: 4, outcome: "Turn your idea into a 10-slide deck that wins judges over.", credits: 4, category: "business", goals: ["competition", "organization"] },
-  { name: "Poster & Layout Design", level: "Beginner", teacher: "Maya", faculty: "FT UI", verified: true, rating: 4.7, sessions: 7, outcome: "Produce print-ready event posters for your organization.", credits: 3, category: "design", goals: ["organization"] },
 ];
 
 function ExplorePage() {
   const { q, category, goal } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const filtering = Boolean(q.trim()) || category !== "all" || goal !== "all";
 
-  const filtered = skills.filter((s) => {
+  const ranked = rankedOfferings();
+  const filtered = ranked.filter(({ offering }) => {
     const query = q.trim().toLowerCase();
-    const matchesQuery = !query || `${s.name} ${s.teacher} ${s.faculty} ${s.outcome}`.toLowerCase().includes(query);
-    const matchesCategory = category === "all" || s.category === category;
-    const matchesGoal = goal === "all" || s.goals.includes(goal);
+    const haystack = `${offering.skill.name} ${offering.teacher.name} ${offering.teacher.faculty} ${offering.skill.outcomes.join(" ")}`;
+    const matchesQuery = !query || haystack.toLowerCase().includes(query);
+    const matchesCategory = category === "all" || offering.skill.category === category;
+    const matchesGoal = goal === "all" || offering.skill.goals.includes(goal as Goal);
     return matchesQuery && matchesCategory && matchesGoal;
   });
 
+  const recommended = recommendedSkills(currentStudent, 3);
+  const facultyOfferings = offeringsFromFaculty(currentStudent.faculty).slice(0, 3);
+  const campusOfferings = offeringsAcrossCampus(currentStudent.faculty)
+    .filter((o) => o.rating >= 4.8)
+    .slice(0, 3);
+  const bestFor = (skillId: string) =>
+    ranked.find((entry) => entry.offering.skill.id === skillId)?.offering;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-10">
-      <p className="text-[11px] font-semibold uppercase text-primary">Knowledge exchange</p>
-      <div className="mt-2 border-b border-workspace-border pb-7">
-        <h1 className="font-display text-3xl font-bold sm:text-4xl">Explore Skills</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-workspace-muted">
-          No one is selling courses here. Every card is a fellow student ready to exchange what they know — verified by real sessions, rated by real learners.
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-7 sm:py-12">
+      <header className="border-b border-workspace-border pb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+          Skill discovery network
         </p>
-      </div>
+        <h1 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight sm:text-4xl">
+          Find the person on campus who already knows what you need.
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-workspace-muted">
+          {offerings.length} active teaching offers from {new Set(offerings.map((o) => o.teacher.id)).size}{" "}
+          students across 10 faculties. Every exchange creates learning, contribution, and career evidence.
+        </p>
+      </header>
 
-      {/* Search */}
-      <div className="mt-6">
-        <input
-          value={q}
-          onChange={(e) => navigate({ search: (prev) => ({ ...prev, q: e.target.value }), replace: true })}
-          placeholder="Search a skill, teacher, or faculty…"
-          aria-label="Search skills"
-          className="h-11 w-full max-w-lg rounded-md border border-workspace-border bg-workspace-card px-4 text-sm outline-none placeholder:text-workspace-muted focus:border-primary"
-        />
-      </div>
-
-      {/* Filters */}
-      <div className="mt-5 space-y-3">
+      {/* Search + filters */}
+      <div className="mt-8 space-y-4">
+        <div className="relative max-w-lg">
+          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-workspace-muted" />
+          <input
+            value={q}
+            onChange={(e) => navigate({ search: (prev) => ({ ...prev, q: e.target.value }), replace: true })}
+            placeholder="Search a skill, student, or faculty…"
+            aria-label="Search skills"
+            className="h-11 w-full rounded-md border border-workspace-border bg-workspace-card pl-10 pr-4 text-sm outline-none placeholder:text-workspace-muted focus:border-primary"
+          />
+        </div>
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
           <span className="mr-1 text-[11px] font-semibold uppercase text-workspace-muted">Category</span>
           {categories.map((c) => {
@@ -163,80 +173,165 @@ function ExplorePage() {
         </div>
       </div>
 
-      {/* Results */}
-      <p className="mt-7 text-xs text-workspace-muted">
-        {filtered.length} skill{filtered.length === 1 ? "" : "s"} open for exchange
-      </p>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((skill) => (
-          <SkillCard key={`${skill.name}-${skill.teacher}`} skill={skill} />
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-full rounded-md border border-dashed border-workspace-border bg-workspace-card p-10 text-center">
-            <p className="font-display text-base font-bold">No match yet</p>
-            <p className="mt-2 text-sm text-workspace-muted">Try a different keyword, category, or goal — or teach this skill yourself.</p>
+      {filtering ? (
+        <section className="mt-10" aria-label="Search results">
+          <SectionHeading
+            eyebrow="Results"
+            title={`${filtered.length} exchange${filtered.length === 1 ? "" : "s"} match your filters`}
+          />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map(({ offering }) => (
+              <SkillCard key={offering.id} offering={offering} />
+            ))}
           </div>
-        )}
-      </div>
+          {filtered.length === 0 && (
+            <EmptyState
+              className="mt-5"
+              icon={<GraduationCap className="size-5" />}
+              title="Nobody teaches this yet — that is an opening."
+              description="No student has offered this exchange so far. Post it as a skill you want, or teach the version you already know and become the first verified teacher."
+              actionLabel="Offer this skill"
+              actionTo="/teach"
+            />
+          )}
+        </section>
+      ) : (
+        <>
+          {/* Recommended for your goals */}
+          <section className="mt-12" aria-label="Recommended for your goals">
+            <SectionHeading
+              eyebrow="Recommended for your goals"
+              title={`Because you are working towards: ${currentStudent.goals
+                .map((g) => goalLabels[g].toLowerCase())
+                .join(" and ")}`}
+              description="Rule-based matching on skill relevance, goal fit, schedule overlap, and teacher rating."
+            />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {recommended.map((skill) => {
+                const offering = bestFor(skill.id);
+                return offering ? <SkillCard key={skill.id} offering={offering} /> : null;
+              })}
+            </div>
+          </section>
+
+          {/* Trending */}
+          <section className="mt-12" aria-label="Trending skills">
+            <SectionHeading
+              eyebrow="Trending this month"
+              title="What campus is learning right now"
+              icon={<Flame className="size-4 text-accent" />}
+            />
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {trendingSkills.map((skill) => (
+                <SkillStat
+                  key={skill.id}
+                  name={skill.name}
+                  category={categoryLabels[skill.category]}
+                  value={`+${skill.growth}%`}
+                  caption="exchanges in 30 days"
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Most exchanged */}
+          <section className="mt-12" aria-label="Most exchanged skills">
+            <SectionHeading
+              eyebrow="Most exchanged all time"
+              title="The skills this campus trades the most"
+              icon={<Repeat2 className="size-4 text-primary" />}
+            />
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {mostExchangedSkills.map((skill) => (
+                <SkillStat
+                  key={skill.id}
+                  name={skill.name}
+                  category={categoryLabels[skill.category]}
+                  value={`${skill.completedExchanges}`}
+                  caption={`completed · ${skill.verifiedTeachers} verified teachers`}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* From your faculty */}
+          <section className="mt-12" aria-label="Skills from your faculty">
+            <SectionHeading
+              eyebrow={`From ${currentStudent.faculty}`}
+              title="People who share your hallway"
+            />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {facultyOfferings.map((offering) => (
+                <SkillCard key={offering.id} offering={offering} />
+              ))}
+            </div>
+          </section>
+
+          {/* Across campus */}
+          <section className="mt-12" aria-label="Skills across campus">
+            <SectionHeading
+              eyebrow="Across campus"
+              title="Skills your faculty rarely teaches"
+              description="The strongest exchanges usually happen between different faculties."
+            />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {campusOfferings.map((offering) => (
+                <SkillCard key={offering.id} offering={offering} />
+              ))}
+            </div>
+            <Link
+              to="/leaderboard"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-strong"
+            >
+              See who contributes the most on campus <ArrowRight className="size-4" />
+            </Link>
+          </section>
+        </>
+      )}
     </div>
   );
 }
 
-function SkillCard({ skill }: { skill: Skill }) {
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  icon,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
+}) {
   return (
-    <article className="flex flex-col rounded-md border border-workspace-border bg-workspace-card p-5 transition-shadow hover:shadow-md">
-      {/* Skill identity */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-base font-bold leading-snug">{skill.name}</h2>
-          <p className="mt-0.5 text-xs text-workspace-muted">{skill.level}</p>
-        </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary-strong">
-          <Coins className="size-3.5" />
-          {skill.credits} Credits
-        </span>
-      </div>
-
-      {/* Teacher + trust */}
-      <div className="mt-4 flex items-center gap-3 rounded-md bg-workspace-soft p-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-md bg-primary-panel font-display text-sm font-bold text-primary-strong">
-          {skill.teacher.charAt(0)}
-        </div>
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-sm font-semibold">
-            <span className="truncate">{skill.teacher}</span>
-            <span className="text-workspace-muted">·</span>
-            <span className="truncate text-xs font-normal text-workspace-muted">{skill.faculty}</span>
-          </p>
-          {skill.verified ? (
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-primary-strong">
-              <BadgeCheck className="size-3.5" /> Verified Skill
-            </p>
-          ) : (
-            <p className="mt-0.5 text-[11px] text-workspace-muted">Verification in progress</p>
-          )}
-        </div>
-      </div>
-
-      {/* Social proof */}
-      <div className="mt-3 flex items-center gap-4 text-xs text-workspace-muted">
-        <span className="flex items-center gap-1 font-semibold text-workspace-foreground">
-          <Star className="size-3.5 fill-accent text-accent" />
-          {skill.rating.toFixed(1)}
-        </span>
-        <span>{skill.sessions} sessions completed</span>
-      </div>
-
-      {/* Outcome */}
-      <p className="mt-3 flex-1 text-sm leading-6 text-workspace-muted">
-        <span className="font-medium text-workspace-foreground">You'll walk away able to: </span>
-        {skill.outcome}
+    <div>
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+        {icon}
+        {eyebrow}
       </p>
+      <h2 className="mt-2 font-display text-xl font-bold sm:text-2xl">{title}</h2>
+      {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-workspace-muted">{description}</p>}
+    </div>
+  );
+}
 
-      {/* Action */}
-      <button className="mt-4 flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong">
-        Request exchange <ArrowRight className="size-4" />
-      </button>
-    </article>
+function SkillStat({
+  name,
+  category,
+  value,
+  caption,
+}: {
+  name: string;
+  category: string;
+  value: string;
+  caption: string;
+}) {
+  return (
+    <div className="rounded-lg border border-workspace-border bg-workspace-card p-4">
+      <p className="text-[11px] uppercase text-workspace-muted">{category}</p>
+      <p className="mt-1 font-display text-sm font-bold leading-snug">{name}</p>
+      <p className="mt-3 font-display text-2xl font-bold text-primary-strong">{value}</p>
+      <p className="mt-0.5 text-[11px] text-workspace-muted">{caption}</p>
+    </div>
   );
 }
